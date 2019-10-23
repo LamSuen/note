@@ -1606,5 +1606,357 @@ public class WebLogAspect {
 在切入点后的操作，按order的值由大到小执行，即：先@Order(8)，后@Order(3)；
 ~~~
 
+# 16.全文检索ElasticSearch
 
+### 1.全文搜索
+
+数据结构：
+
+结构化：指具有固定格式或有限长度的数据，如数据库，元数据等
+
+非结构化：指不定长或无固定格式的数据，如邮件，word文档等
+
+非结构化数据的检索 例如字典
+
+​	顺序扫描法(Serial Scanning) ：例如计算机查找某个文件，适用于文件较少的情况
+
+​	全文搜索（Full-text Search）：将非结构化中的一部分信息提取出来，重新组合，使其变得有一定结构，实际就是将非结构化转变为有结构化数据，**<u>并建立索引</u>**
+
+#### 1.1 概念
+
+​	全文检索是一种将文件中所有文本与搜索项匹配的文字资料检索方法
+
+#### 1.2 实现原理
+
+​	建文本库->建立索引->执行搜索->过滤结果
+
+#### 1.3 全文搜索实现技术
+
+基于java的开源实现
+
+- Lucene:有名的搜索引擎(巨人，发动机)
+- ElasticSearch:基于Lucene引擎建立(踩着巨人攀登，车)，自身带有分布式协调管理功能，只支持json，主要提供RESTful接口，侧重于核心
+- Solr:与Es同类型，利用zookeeper管理系统，支持json，xml等，传统搜索好于ES，实时搜索不如ES
+- 场景适用不同，各有优势，目前市场上ES相对火爆一些
+
+### 2.ElasticSearch简介
+
+#### 2.1ElasticSearch是什么？
+
+- 高度可扩展的开源全文搜索和分析引擎
+- 快速地，近实时地对大数据进行存储，搜索和分析
+- 用来支撑有复杂的数据搜索需求的企业级应用
+
+#### 2.2ElasticSearch的特点
+
+- 分布式实时文件存储，可将每一个字段存入索引，使其可以被检索到
+- 实时分析的分布式搜索引擎
+- 分布式：索引分拆成多个分片，每个分片可有零个或多个副本。集群中的每个数据节点都可承载一个或多个分片，并且协调和处理各种操作，每个分片都可进行读取和搜索；
+- 高可用：基于分布式，其中一个分片有问题，其余分片可继续使用，不会因为单个有问题导致功能奔溃
+- 多类型：支持多种数据类型操作
+- 多用API：支持RESTful风格(/test/{id})，支持java原生api(/test?param=value)
+- 面向文档：是用于存储、检索和管理面向文档和半结构化的数据。它是NoSQL数据库。其核心概念就是文档的观念，虽然不同的面向文档数据在实现这个定义上有差别，（在一般情况下）但它们在文档封装和数据编码上有一些标准格式。编码包括 XML、YAML、JSON 和 BSON，还有二进制格式（诸如PDF和MS office 文档）。
+- 异步写入：相对于同步效率更高
+- 近实时：接近实时速度读取，但还不是真正的实时，有轻微延时，在1s左右
+- 基于Lucene(某一个功能割舍掉，然后加速另外一个功能)
+- Apache协议(Apache Hadoop子项目)
+
+### 3.ElasticSearch核心概念
+
+- 近实时：接近实时速度读取，但还不是真正的实时，有轻微延时，在1s左右
+- 集群：一个或者多个节点的集合，用来保存应用的全部数据，并提供基于全部节点的集成式的索引的搜索功能，每一个集群都有一个名称，默认为ElasticSearch
+- 节点：集群中的一个单台服务器，用来保存数据，并参与整个集群的索引的搜索的操作，节点也有默认名称，可以自定义
+- 索引：加快搜索速度
+- 类型：对一个索引中包含文档进一步的细分，一般根据产品的特征，来划分不同的类型，例如：一般产品，虚拟产品等
+- 文档：进行索引的基本单位，与索引类型是相对应的，每个具体的产品可以有一个文档与之对应，文档用json来表示
+- 分片：存储数量较大时，会超出单个节点所能处理的范围，ES可以把索引分成多个分片，用来存储索引的部分数据，ES会自动负责分配和聚合，从可靠性角度出发，对于分片中的数据，还需要一个副本，ES每个索引都可以分成多个分片，并且会有多个副本，ES会自动管理这些节点中的分片和副本，对开发人员来说是透明的。
+- 为什么要有这个分片：一方面需要水平的来分割或者缩放内容卷，其次可以并行在多个节点上，提高性能和吞吐量
+- 副本：1.故障不可避免，为了使系统提供高可用性，将副本分配到不同的节点上 2.增加副本可以增加搜索量和吞吐量
+- 总而言之：索引可以划分成多个分片，分片又可以设置多个副本，默认情况，ES每个索引会分配5个分片1个副本，意味着集群至少会有两个节点，会拥有5个分片，5个副本
+
+### 4.ElasticSearch与springboot集成
+
+#### 4.1配置环境：
+
+- ElasticSearch 5.6.8
+- Spring Data ElasticSearch 2.1.9.RELEASE
+- JNA 5.3.1 访问操作系统原生应用，ElasticSearch 需要安装此依赖
+
+~~~xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter</artifactId>
+  <version>2.1.9.RELEASE</version>
+</dependency>
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-web</artifactId>
+  <version>2.1.9.RELEASE</version>
+</dependency>
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-test</artifactId>
+  <scope>test</scope>
+  <version>2.1.9.RELEASE</version>
+</dependency>
+<!--添加对应依赖-->
+<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-elasticsearch -->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+  <version>2.1.9.RELEASE</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/net.java.dev.jna/jna -->
+<dependency>
+  <groupId>net.java.dev.jna</groupId>
+  <artifactId>jna</artifactId>
+  <version>5.3.1</version>
+</dependency>
+<!-- springBoot JPA的起步依赖 -->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<!-- MySQL连接驱动 -->
+<dependency>
+  <groupId>mysql</groupId>
+  <artifactId>mysql-connector-java</artifactId>
+  <version>5.1.38</version>
+</dependency>
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-devtools</artifactId>
+  <!-- optional=true,依赖不会传递，该项目依赖devtools；之后依赖boot项目的项目如果想要使用devtools，需要重新引入 -->
+  <optional>true</optional>
+</dependency>
+
+~~~
+
+#### 4.2修改application.properties
+
+~~~properties
+# elasticSearch服务地址
+spring.data.elasticsearch.cluster-nodes=localhost:9300
+# 设置连接超时时间
+spring.data.elasticsearch.properties.transport.tcp.connect_timeout=120s
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.datasource.driver-class-name= com.mysql.jdbc.Driver
+spring.datasource.url= jdbc:mysql://localhost:3306/test
+spring.datasource.username=root
+spring.datasource.password=123
+
+
+~~~
+
+### 5.ElasticSearch实战
+
+#### 5.1.编写 文档类EsBlog
+
+~~~java
+package com.ssc.domain.es;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+
+import java.io.Serializable;
+
+//文档EsBlog
+//定义blog类实现序列化
+@Document(indexName="blog",type="blog")// 文档
+public class EsBlog implements Serializable {
+    @Id
+    private String id;//ES文档中的id定义为string
+    private String title;
+    private String summary;//摘要
+    private String content;//正文内容
+
+    protected EsBlog(){//JPA规范要求，防止直接使用
+    }
+    public EsBlog(String title,String summary,String content){
+        this.title = title;
+        this.summary = summary;
+        this.content = content;
+    }
+    @Override
+    public String toString(){
+        return String.format("EsBlog[id='%s',title='%s',summary='%s',content='%s']",id,title,summary,content);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public String getContent() {
+        return content;
+    }
+}
+~~~
+
+#### 5.2资源库EsBlogRepository
+
+##### 解析方法名创建查询，自定义查询
+
+规则：find+全局修饰+By+实体的属性名称+限定词+连接词+ …(其它实体属性)+OrderBy+排序属性+排序方向。例如：
+
+~~~java
+//分页查询出符合姓名的记录,同理Sort也可以直接加上
+public List<User> findByName(String name, Pageable pageable);
+
+//正确
+public List<User> findByUsernameLike(String username);
+//错误
+public List<User> aaa();
+继承jpa，必须满足一些规则，规则如下：
+全局修饰： Distinct， Top， First
+关键词： IsNull， IsNotNull， Like， NotLike， Containing， In， NotIn，
+IgnoreCase， Between， Equals， LessThan， GreaterThan， After， Before…
+排序方向： Asc， Desc
+连接词： And， Or
+And — 等价于 SQL 中的 and 关键字，比如 findByUsernameAndPassword(String user, Striang pwd)；
+Or — 等价于 SQL 中的 or 关键字，比如 findByUsernameOrAddress(String user, String addr)；
+Between — 等价于 SQL 中的 between 关键字，比如 findBySalaryBetween(int max, int min)；
+LessThan — 等价于 SQL 中的 “<”，比如 findBySalaryLessThan(int max)；
+GreaterThan — 等价于 SQL 中的”>”，比如 findBySalaryGreaterThan(int min)；
+IsNull — 等价于 SQL 中的 “is null”，比如 findByUsernameIsNull()；
+IsNotNull — 等价于 SQL 中的 “is not null”，比如 findByUsernameIsNotNull()；
+NotNull — 与 IsNotNull 等价；
+Like — 等价于 SQL 中的 “like”，比如 findByUsernameLike(String user)；
+NotLike — 等价于 SQL 中的 “not like”，比如 findByUsernameNotLike(String user)；
+OrderBy — 等价于 SQL 中的 “order by”，比如 findByUsernameOrderBySalaryAsc(String user)；
+Not — 等价于 SQL 中的 “！ =”，比如 findByUsernameNot(String user)；
+In — 等价于 SQL 中的 “in”，比如 findByUsernameIn(Collection userList) ，方法的参数可以是 Collection 类型，也可以是数组或者不定长参数；
+NotIn — 等价于 SQL 中的 “not in”，比如 findByUsernameNotIn(Collection userList) ，方法的参数可以是 Collection 类型，也可以是数组或者不定长参数
+//解释
+Spring Data JPA框架在进行方法名解析时，会先把方法名多余的前缀截取掉，比如find，findBy，read，readBy，get，getBy，然后对剩下的部分进行解析。
+
+假如创建如下的查询：findByUserName（），框架在解析该方法时，首先剔除findBy，然后对剩下的属性进行解析，假设查询实体为User
+
+1：先判断userName（根据POJO规范，首字母变为小写）是否为查询实体的一个属性，如果是，则表示根据该属性进行查询;如果没有该属性，继续第二步;
+
+2：从右往左截取第一个大写字母开头的字符串此处是Name），然后检查剩下的字符串是否为查询实体的一个属性，如果是，则表示根据该属性进行查询;如果没有该属性，则重复第二步，继续从右往左截取;最后假设用户为查询实体的一个属性;
+
+3：接着处理剩下部分（UserName），先判断用户所对应的类型是否有userName属性，如果有，则表示该方法最终是根据“User.userName”的取值进行查询;否则继续按照步骤2的规则从右往左截取，最终表示根据“User.userName”的值进行查询。
+
+4：可能会存在一种特殊情况，比如User包含一个的属性，也有一个userNameChange属性，此时会存在混合。可以明确在属性之间加上“_”以显式表达意思，比如“findByUser_NameChange ）“或者”findByUserName_Change（）“
+~~~
+
+
+
+~~~java
+package com.ssc.repository.es;
+
+import com.ssc.domain.es.EsBlog;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
+
+//资源库EsBlogRepository
+public interface EsBlogRepository extends ElasticsearchRepository<EsBlog,String> {
+    //分页查询博客并去重
+    Page<EsBlog> findDistinctEsBlogByTitleContainingOrSummaryContainingOrContentContaining(String title, String summary, String content, Pageable pageable);
+}
+
+~~~
+
+#### 5.3资源库测试用例EsBlogRepositoryTest,开始测试前启动ElasticSearch
+
+~~~java
+package com.ssc;
+
+import com.ssc.domain.es.EsBlog;
+import com.ssc.repository.es.EsBlogRepository;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = ElasticserachDemoApplication.class)
+public class ElasticserachDemoApplicationTests{
+    @Autowired
+    private EsBlogRepository esBlogRepository;
+
+    @Before
+    public void initRepositoryData(){
+        //清除所有数据
+        esBlogRepository.deleteAll();
+        //初始化数据
+        esBlogRepository.save(new EsBlog("登鹳雀楼","王之涣的登鹳雀楼","白日依山尽，黄河入海流。欲穷千里目，更上一层楼。"));
+        esBlogRepository.save(new EsBlog("相思","王维的相思","红豆生南国,春来发几枝。愿君多采撷,此物最相思。"));
+        esBlogRepository.save(new EsBlog("静夜思","李白的静夜思","床前明月光，疑是地上霜。举头望明月，低头思故乡。"));
+    }
+    @Test
+    public void testFind(){
+        Pageable pageable = new PageRequest(0,20);
+        String title = "思";
+        String summary = "相思";
+        String content = "相思";
+        Page<EsBlog> page = esBlogRepository.findDistinctEsBlogByTitleContainingOrSummaryContainingOrContentContaining
+                (title,summary,content,pageable);
+        Assert.assertEquals(page.getTotalElements(),2);
+
+        for(EsBlog esblog : page.getContent()){
+            System.out.println(esblog.toString());
+        }
+    }
+
+
+}
+
+~~~
+
+#### 5.5控制器BlogController
+
+~~~java
+package com.ssc.controller.es;
+
+import com.ssc.domain.es.EsBlog;
+import com.ssc.repository.es.EsBlogRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+public class BlogController {
+    @Autowired
+    private EsBlogRepository esBlogRepository;
+
+    @GetMapping("/list") //访问时记住传参
+    public List<EsBlog> list(@RequestParam(value = "title") String title,
+                             @RequestParam(value = "summary") String summary,
+                             @RequestParam(value = "content") String content,
+                             @RequestParam(value = "pageIndex", defaultValue = "0") Integer pageIndex,
+                             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize
+    ) {
+        //数据在测试用例中初始化
+        Pageable pageable = new PageRequest(pageIndex, pageSize);
+        Page<EsBlog> page = esBlogRepository.findDistinctEsBlogByTitleContainingOrSummaryContainingOrContentContaining
+                (title, summary, content, pageable);
+        return page.getContent();
+    }
+}
+
+~~~
 
