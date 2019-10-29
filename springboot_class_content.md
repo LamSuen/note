@@ -1,5 +1,5 @@
 ---
-typora-root-url: image
+
 ---
 
 <!-- 如果springboot项目在没有网络的情况下，可以创建普通的maven项目，手动根据springboot官网提供的说明，复制相应代码 -->
@@ -2802,9 +2802,9 @@ testClasses - Assembles classes 'test'.
     - 依赖关键词对比：
 
       - 旧版本：2.x的依赖关键词
-      - ![2_x](..\image\2_x.png)
+      - ![2_x](image/2_x.png)
       - 新版本：3.x的依赖关键词
-      - ![3_x](..\image\3_x.png)
+      - ![3_x](image\3_x.png)
       - `implementation`和`api`
         - `implementation`和`api`是取代之前的`compile`的，其中`api`和`compile`是一样的效果，使用该方式依赖的库将会参与编译和打包，`implementation`有所不同，通过`implementation`依赖的库只能自己库本身访问，举个例子，A依赖B，B依赖C，如果B依赖C是使用的`implementation`依赖，那么在A中是访问不到C中的方法的，如果需要访问，请使用api依赖
       - `compile only`
@@ -2959,11 +2959,11 @@ zipStorePath=wrapper/dists
     - `<form action="xx.html" th:action="@{/user/insert}"></form>`
     - `<input type="submit" value="submit---" th:value="提交"/>`
   - 其他属性：
-    - ![img](../image/using_attr.png?lastModify=1572245152)
+    - ![img](image/using_attr.png?lastModify=1572245152)
   - 固定值布尔属性：
     - xhtml/html：`<input type="checkbox" checked="checked">or<input type="checkbox" checked />`
     - thymeleaf：`<input type th:checked="${user.active}" />`
-    - ![using_control](..\image\using_control.png)
+    - ![using_control](image\using_control.png)
   - ​
 
 - 迭代器
@@ -2971,14 +2971,14 @@ zipStorePath=wrapper/dists
   - 基本的迭代：th:each
     - `<li th:each="book : ${books}" th:text="${book.title}">En las ...</li>`
     - 状态变量：index(当前索引，0开始),count(当前序号，1),size(当前迭代器总数),current(当前迭代的变量),even/odd(奇偶数),first(第一个),last(最后一个)
-    - ![using_status](..\image\using_status.png)
+    - ![using_status](image\using_status.png)
   - ​
 
 - 条件语句
 
   - th:if：`<a th:href="@{/user/coms}" th:if="${not #list.isEmpty(user.comments)}">view</a>`
   - th:unless：`<a th:href="@{/user/coms}" th:unless="${#list.isEmpty(user.comments)}">view</a>`
-  - th:switch：![using_switch](..\image\using_switch.png)
+  - th:switch：![using_switch](image\using_switch.png)
 
 - 模板布局
 
@@ -2988,14 +2988,14 @@ zipStorePath=wrapper/dists
   - 不适用th:fragment定义
     - 定义：`<div id="copy-section">&copy;2019<a href="http://www.baidu.com">baidu</a></div>`
     - 引用：`<div th:insert="~{footer : : #copy-section}"></div>`
-  - ![using_thymeleaf_fragment](..\image\using_thymeleaf_fragment.png)
-  - ![using_thymeleaf_fragment](..\image\using_thymeleaf_fragment2.png)
+  - ![using_thymeleaf_fragment](image\using_thymeleaf_fragment.png)
+  - ![using_thymeleaf_fragment](image\using_thymeleaf_fragment2.png)
 
 - 属性优先级
 
   - 当在同一个标签中写入多个th:*属性时，会发生什么？
   - `<li th:each="item : ${items}" th:text="${item.description}">Item description here</li>`
-  - ![using_th_order](..\image\using_th_order.png)
+  - ![using_th_order](image\using_th_order.png)
   - ​
 
 - 注释
@@ -3027,7 +3027,7 @@ zipStorePath=wrapper/dists
 
   - `#locale:`直接访问于java.util.Locale关联的当前的请求
 
-  - ![using_context](..\image\using_context.png)
+  - ![using_context](image\using_context.png)
 
   - request/session属性
 
@@ -3037,7 +3037,7 @@ zipStorePath=wrapper/dists
 
     - application：用于检索application/servlet上下文属性
 
-    - ![using_context_parm](..\image\using_context_parm.png)
+    - ![using_context_parm](image\using_context_parm.png)
 
     - Web上下文对象
 
@@ -3047,7 +3047,7 @@ zipStorePath=wrapper/dists
 
       - `#servletContext:直接访问与当前请求关联的javax.servlet.ServletContext对象`
 
-      - ![using_context_web](..\image\using_context_web.png)
+      - ![using_context_web](image\using_context_web.png)
 
         ​
 
@@ -3056,7 +3056,7 @@ zipStorePath=wrapper/dists
 
 #### 1.用户管理API设计：
 
-![using_project_thymeleaf_api](..\image\using_project_thymeleaf_api.png)
+![using_project_thymeleaf_api](image\using_project_thymeleaf_api.png)
 
 #### 2.目录结构：
 
