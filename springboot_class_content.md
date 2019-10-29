@@ -2802,7 +2802,7 @@ testClasses - Assembles classes 'test'.
     - 依赖关键词对比：
 
       - 旧版本：2.x的依赖关键词
-      - ![2_x](image/2_x.png)
+      - ![2_x](./image/2_x.png)
       - 新版本：3.x的依赖关键词
       - ![3_x](image/3_x.png)
       - `implementation`和`api`
