@@ -3402,20 +3402,137 @@ login.html
 
 
 
+### 11.博客系统的整体框架实现
+
+#### 1.blog-prototype控制器
+
+- MainController：针对主页
+- BlogController：针对博客
+- UserspaceController：用户主页的控制层
+- AdminController：针对管理的一些控制权限
+- UserController：针对用户的控制层
+
+
+#### 2.级联操作：
+
+- CascadeType.REMOVE
+  Cascade remove operation，级联删除操作。
+  删除当前实体时，与它有映射关系的实体也会跟着被删除。
+
+- CascadeType.MERGE
+  Cascade merge operation，级联更新（合并）操作。
+  当Student中的数据改变，会相应地更新Course中的数据。
+
+- CascadeType.DETACH
+  Cascade detach operation，级联脱管/游离操作。
+  如果你要删除一个实体，但是它有外键无法删除，你就需要这个级联权限了。它会撤销所有相关的外键关联。
+
+- CascadeType.REFRESH
+  Cascade refresh operation，级联刷新操作。
+  假设场景 有一个订单,订单里面关联了许多商品,这个订单可以被很多人操作,那么这个时候A对此订单和关联的商品进行了修改,与此同时,B也进行了相同的操作,但是B先一步比A保存了数据,那么当A保存数据的时候,就需要先刷新订单信息及关联的商品信息后,再将订单及商品保存。(来自[良心会痛](https://www.jianshu.com/users/a11a21634ee8/timeline)的评论)
+
+- CascadeType.ALL
+  Cascade all operations，清晰明确，拥有以上所有级联操作权限。
+
+- CascadeType.PERSIST：级联保存，当调用了Persist() 方法，会级联保存相应的数据
+
+- 加载方式：
+
+- FetchType.LAZY：懒加载，加载一个实体时，定义懒加载的属性不会马上从数据库中加载
+
+  FetchType.EAGER：急加载，加载一个实体时，定义急加载的属性会立即从数据库中加载
+
+#### 3.JPA常用注解：
+
+​	1.**@Entity**：标识实体类是JPA实体，告诉JPA在程序运行时生成实体类对应表
+
+​	2.**@Table**：设置实体类在数据库所对应的表名
+
+​	3.**@Id**：标识类里所在变量为主键
+
+​	4.**@GeneratedValue**：设置主键生成策略，此方式依赖于具体的数据库
+
+​	5.**@Basic**：表示简单属性到数据库表字段的映射（几乎不用）
+
+​	6.**@Column**：表示属性所对应字段名进行个性化设置
+
+​	7.**@Transient**：表示属性并非数据库表字段的映射,ORM框架将忽略该属性
+
+​	8.**@Temporal**：（很重要）
+
+　　当我们使用到java.util包中的时间日期类型，则需要此注释来说明转化成java.util包中的类型。
+
+　　注入数据库的类型有三种：
+
+　　　　TemporalType.DATE（2008-08-08）
+
+　　　　TemporalType.TIME（20:00:00）
+
+　　　　TemporalType.TIMESTAMP（2008-08-08 20:00:00.000000001）
+
+​	9.**@Enumerated**：（很重要）
+
+　　使用此注解映射枚举字段，以String类型存入数据库
+
+　　注入数据库的类型有两种：EnumType.ORDINAL（Interger）、EnumType.STRING（String）
+
+​	10.**@Embedded**、**@Embeddable**：
+
+　　当一个实体类要在多个不同的实体类中进行使用，而其不需要生成数据库表
+
+　　@Embeddable：注解在类上，表示此类是可以被其他类嵌套
+
+　　@Embedded：注解在属性上，表示嵌套被@Embeddable注解的同类型类
+
+​	11.**@ElementCollection**：集合映射
+
+#### 4.常用的校验注解
+
+- @Null  被注释的元素必须为null
+- @NotNull  被注释的元素不能为null
+- @AssertTrue  被注释的元素必须为true
+- @AssertFalse  被注释的元素必须为false
+- @Min(value)  被注释的元素必须是一个数字，其值必须大于等于指定的最小值
+- @Max(value)  被注释的元素必须是一个数字，其值必须小于等于指定的最大值
+- @DecimalMin(value)  被注释的元素必须是一个数字，其值必须大于等于指定的最小值
+- @DecimalMax(value)  被注释的元素必须是一个数字，其值必须小于等于指定的最大值
+- @Size(max,min)  被注释的元素的大小必须在指定的范围内。
+- @Digits(integer,fraction)  被注释的元素必须是一个数字，其值必须在可接受的范围内
+- @Past  被注释的元素必须是一个过去的日期
+- @Future  被注释的元素必须是一个将来的日期
+- @Pattern(value) 被注释的元素必须符合指定的正则表达式。
+- @Email 被注释的元素必须是电子邮件地址
+- @Length 被注释的字符串的大小必须在指定的范围内
+- @NotEmpty  被注释的字符串必须非空
+- @Range  被注释的元素必须在合适的范围内
+
+#### 5.JoinColum和Colum的区别：
+
+```java
+@JoinTable(name = "user_authority",joinColumns = @JoinColumn(name = "user_id",referencedColumnName = "id"),inverseJoinColumns = @JoinColumn(name="authorize_id",referencedColumnName = "id"))
+```
+
+@JoinColumn注释的是保存表与表之间关系的字段，它要标注在实体属性上。而@Column标注的是表中不包含表关系的字段。
+
+joinColumns:主操作表
+
+inverseJoinColumns:副操作表
+
+name属性是用来标识表中所对应的字段的名称。
+
+属性referencedColumnName标注的是所关联表中的字段名，若不指定则使用的所关联表的主键字段名作为外键。 
 
 
 
+6.UserDetails接口的方法作用：
 
-
-
-
-
-
-
-
-
-
-
+```java
+isAccountNonExpired()  // 帐户是否过期
+isAccountNonLocked()  // 帐户是否被冻结
+isCredentialsNonExpired() //帐户密码是否过期，一般有的密码要求性高的系统会使用到，比较每隔一段时间就要求用户重置密码
+isEnabled()   // 帐号是否可用
+getAuthorities() //获取此用户所有的角色权限
+```
 
 
 
