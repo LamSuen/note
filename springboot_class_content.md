@@ -1964,6 +1964,138 @@ public class BlogController {
 
 ~~~
 
+### **Special：ElasticSearch补充**
+
+请求：POST新增时，PUT更新所有字段，PATCH更新部分字段，DELETE删除，GET获取数据
+
+索引(数据库)：含有相同属性的文档集合
+
+类型(表)：索引可以定义一个或多个类型，文档必须属于一个类型
+
+文档(一条数据)：文档是可以被索引的基本数据单位，最小的存储单位
+
+分片：每个索引都有多个分片，每个分片是一个Lucene索引，索引量大，造成硬盘压力大，搜索速度会变慢，分摊搜索以及其他操作的压力
+
+备份：拷贝一份分片就完成了分片的备份，主分片有问题，备份的分片可以代替工作
+
+RESTFul API:
+
+API基本格式：http://<ip>:<port>/<索引>/<类型>/<文档id>
+
+常用的HTTP动词：GET/PUT/POST/DELETE
+
+ES集群搭建
+
+主节点：
+
+~~~yaml
+# 主节点
+# 集群的名字
+cluster.name: lamsuen
+# 指挥官的名字
+node.name: master
+# 绑定的ip
+network.host: 127.0.0.1
+# 当前master的端口
+http.port: 9200
+# 是否支持跨域
+http.cors.enabled: true 
+# 当设置允许跨域，默认为*,表示支持所有域名
+http.cors.allow-origin: "*"
+# 当前的es服务就是master
+node.master: true
+# 表示节点是否存储数据,默认是true
+node.data: true
+~~~
+
+子节点：
+
+~~~yaml
+# 集群的名字
+cluster.name: lamsuen
+# 节点(随从)的名字
+node.name: slave1
+# 绑定的ip
+network.host: 127.0.0.1
+# 当前节点的端口
+http.port: 9201
+# 找到master的ip
+discovery.zen.ping.unicast.hosts: ["127.0.0.1"]
+~~~
+
+新建索引：(索引状态中的mappings:{}空的则为非机构话，反之)
+
+非结构化创建--
+
+索引名要小写，不能有中划线，通过head可视化插件，选择索引新建，设置分片数量，以及副本数量，粗线框则是主分片，细线框为分片的备份，细框为粗狂的备份
+
+结构化创建--
+
+复合查询中通过语句创建
+
+~~~json
+POST http://localhost:9200/test/user/_mappings
+{
+  "user":{
+    "properties:"{
+    "username":{"type":"text"}
+  }
+  }
+}
+~~~
+
+~~~json
+PUT http://localhost:9200/test/_mapping/user/?pretty
+{
+  "blog": {
+    "properties": {
+      "tags": {
+        "type": "text",
+        "fielddata": true
+      },
+      "title": {
+        "type": "text",
+        "fielddata": true
+      },
+      "summary": {
+        "type": "text",
+        "fielddata": true
+      },
+      "content": {
+        "type": "text",
+        "fielddata": true
+      },
+      "username": {
+        "type": "text",
+        "fielddata": true
+      }
+    }
+  }
+}
+~~~
+
+缺点：编写JSON不方便，故使用POSTMAN可视化工具，实现json格式验证编写，模拟提交
+
+~~~json
+{
+    "settings": {
+        "number_of_shards": 3,
+        "number_of_replicas": 1
+    },
+    "mappings": {
+        "user": {
+            "properties": {
+                "password": {
+                    "type": "text"
+                }
+            }
+        }
+    }
+}
+~~~
+
+
+
 # 17.Gradle
 
 ### 1.gradle简介
